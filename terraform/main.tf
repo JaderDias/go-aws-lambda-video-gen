@@ -34,8 +34,8 @@ locals {
 
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  source_file = "bin/hello"
-  output_path = "bin/hello.zip"
+  source_file = "../bin/hello"
+  output_path = "../bin/hello.zip"
 }
 
 /*
