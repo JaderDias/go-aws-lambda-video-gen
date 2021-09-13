@@ -22,6 +22,5 @@ bin/
 # vendor/
 
 # Terraform
-.terraform.lock.hcl
-terraform.tfstate
-.terraform
+.terraform*
+terraform.*
