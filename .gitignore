@@ -1,6 +1,8 @@
 # AWS CLI
 aws
-awscliv2.zip
+
+# Compressed files
+*.zip
 
 # Binaries for programs and plugins
 *.exe
@@ -8,6 +10,7 @@ awscliv2.zip
 *.dll
 *.so
 *.dylib
+bin/
 
 # Test binary, built with `go test -c`
 *.test
@@ -17,3 +20,8 @@ awscliv2.zip
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# Terraform
+.terraform.lock.hcl
+terraform.tfstate
+.terraform
