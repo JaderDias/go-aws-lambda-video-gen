@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -57,7 +58,7 @@ func (l lambdaHander) Run(ctx context.Context, event events.APIGatewayCustomAuth
 	}
 
 	// Create item in table Movies
-	tableName := "my-table-flexible-hen"
+	tableName := os.Getenv("DYNAMODB_TABLE_ID")
 
 	input := &dynamodb.PutItemInput{
 		Item:      av,

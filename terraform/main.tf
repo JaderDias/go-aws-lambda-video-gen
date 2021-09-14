@@ -2,6 +2,10 @@ provider "aws" {
   region = var.aws_region
 }
 
+resource "random_pet" "this" {
+  length = 2
+}
+
 data "aws_caller_identity" "current" {}
 
 locals {
@@ -9,8 +13,6 @@ locals {
   environment     = "dev"
   lambda_handler  = "hello"
   name            = "go-lambda-terraform-setup"
-  random_name     = "Morty"
-  region          = "us-east-1"
 }
 
 data "archive_file" "lambda_zip" {
@@ -52,7 +54,7 @@ data "aws_iam_policy_document" "logs" {
     actions = ["logs:CreateLogStream", "logs:PutLogEvents"]
 
     resources = [
-      "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/lambda/${local.name}*:*"
+      "arn:aws:logs:${var.aws_region}:${local.account_id}:log-group:/aws/lambda/${local.name}*:*"
     ]
   }
 }
@@ -66,6 +68,31 @@ resource "aws_iam_role_policy_attachment" "logs" {
   depends_on  = [aws_iam_role.lambda, aws_iam_policy.logs]
   role        = aws_iam_role.lambda.name
   policy_arn  = aws_iam_policy.logs.arn
+}
+
+// DynamoDb Policy
+data "aws_iam_policy_document" "dynamodb" {
+  policy_id = "${local.name}-lambda-dynamodb"
+  version   = "2012-10-17"
+  statement {
+    effect  = "Allow"
+    actions = ["dynamodb:PutItem"]
+
+    resources = [
+      module.dynamodb_table.dynamodb_table_arn
+    ]
+  }
+}
+
+resource "aws_iam_policy" "dynamodb" {
+  name   = "${local.name}-lambda-dynamodb"
+  policy = data.aws_iam_policy_document.dynamodb.json
+}
+
+resource "aws_iam_role_policy_attachment" "dynamodb" {
+  depends_on  = [aws_iam_role.lambda, aws_iam_policy.dynamodb]
+  role        = aws_iam_role.lambda.name
+  policy_arn  = aws_iam_policy.dynamodb.arn
 }
 
 /*
@@ -95,7 +122,7 @@ resource "aws_lambda_function" "func" {
 
   environment {
     variables = {
-      RANDOM_NAME = local.random_name
+      DYNAMODB_TABLE_ID = module.dynamodb_table.dynamodb_table_id
     }
   }
 }
@@ -120,28 +147,24 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_call_check_foo" {
   source_arn    = "${aws_cloudwatch_event_rule.every_one_minute.arn}"
 }
 
-resource "random_pet" "this" {
-  length = 2
-}
-
 module "dynamodb_table" {
   source   = "terraform-aws-modules/dynamodb-table/aws"
 
   name      = "my-table-${random_pet.this.id}"
-  hash_key  = "id"
-  range_key = "title"
+  hash_key  = "Id"
+  range_key = "Title"
 
   attributes = [
     {
-      name = "id"
+      name = "Id"
       type = "N"
     },
     {
-      name = "title"
+      name = "Title"
       type = "S"
     },
     {
-      name = "age"
+      name = "Age"
       type = "N"
     }
   ]
@@ -149,10 +172,10 @@ module "dynamodb_table" {
   global_secondary_indexes = [
     {
       name               = "TitleIndex"
-      hash_key           = "title"
-      range_key          = "age"
+      hash_key           = "Title"
+      range_key          = "Age"
       projection_type    = "INCLUDE"
-      non_key_attributes = ["id"]
+      non_key_attributes = ["Id"]
     }
   ]
 
